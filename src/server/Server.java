@@ -67,7 +67,7 @@ public class Server implements Runnable
                 do
                 {
                     Socket s = socket.accept();
-                    System.out.println("New Request");
+                    System.out.println("New Request from : " + s.getInetAddress() + "[" + s.getPort() + "]");
                     ServerRequestManager manager = new ServerRequestManager(this, s);
                     manager.run();
                 } while(true);

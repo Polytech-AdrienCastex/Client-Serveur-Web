@@ -7,6 +7,8 @@
 package client;
 
 import client_serveur_web.Converters;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,7 +37,7 @@ public class Client
             
             HTTPPacket packRe = new HTTPPacket();
             packRe.setVersion("HTTP/1.1");
-            packRe.setURI("/logos/doodles/2014/mary-annings-215th-birthday-6631942149636096.4-hp.jpg");
+            packRe.setURI("/");
             packRe.setMethod("GET");
             packRe.setHost(dest);
             //packRe.setConnection("keep-alive");
@@ -47,7 +49,7 @@ public class Client
             
             System.out.println(packRe.toRequestString());
             
-            OutputStream os = s.getOutputStream();
+            OutputStream os = new BufferedOutputStream(s.getOutputStream());
             os.write(packRe.toRequestBytes());
             
             
@@ -55,27 +57,30 @@ public class Client
             
             
             
-            InputStream is = s.getInputStream();
+            InputStream is = new BufferedInputStream(s.getInputStream());
             byte[] datas = new byte[2000];
             int nb = is.read(datas);
             
             HTTPPacket pack = new HTTPPacket(datas, nb);
             
             s.setSoTimeout(100);
-            try
-            {
-                do
+            if(pack.isChunked())
+            { // If the response is chunked
+                try
                 {
-                    datas = new byte[2000];
-                    nb = is.read(datas);
-                    pack.addMessage(datas, nb);
-                } while(nb > 0);
+                    do
+                    {
+                        datas = new byte[2000];
+                        nb = is.read(datas);
+                        pack.addMessage(datas, nb); // Concat datas
+                    } while(nb > 0);
+                }
+                catch(SocketTimeoutException ex)
+                { }
             }
-            catch(SocketTimeoutException ex)
-            { }
             
             
-            File f = new File("a.jpg");
+            File f = new File("a.html");
             FileOutputStream fos = new FileOutputStream(f);
             fos.write(pack.getMessage());
             

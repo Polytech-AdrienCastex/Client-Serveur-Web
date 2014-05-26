@@ -7,6 +7,9 @@
 package server;
 
 import client_serveur_web.Converters;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -16,14 +19,12 @@ public class HTTPPacket
 {
     // <editor-fold desc="Constructors" defaultstate="collapsed">
     public HTTPPacket()
-    {
-        
-    }
+    { }
     
     public HTTPPacket(byte[] datas, int length)
     {
         String content = Converters.GetStringFromByteArray(datas, length);
-        
+        //System.out.println(content);
         String[] lines = content.split("\r\n");
         int offset_char = 0;
         
@@ -60,63 +61,10 @@ public class HTTPPacket
             { // Headers
                 data = line.substring(req[0].length() + 1);
                 
-                switch(req[0].toLowerCase())
-                {
-                    case "accept:":
-                        setAccept(data);
-                        break;
-                        
-                    case "accept-language:":
-                        setAcceptLanguage(data);
-                        break;
-                        
-                    case "user-agent:":
-                        setUserAgent(data);
-                        break;
-                        
-                    case "accept-encoding:":
-                        setAcceptEncoding(data);
-                        break;
-                        
-                    case "accept-charset:":
-                        setAcceptCharset(data);
-                        break;
-                        
-                    case "host:":
-                        setHost(data);
-                        break;
-                        
-                    case "if-modified-since:":
-                        setIfModifiedSince(data);
-                        break;
-                        
-                    case "if-unmodified-since:":
-                        setIfUnmodifiedSince(data);
-                        break;
-                        
-                    case "authorization:":
-                        setAuthorization(data);
-                        break;
-                        
-                    case "cookie:":
-                        setCookie(data);
-                        break;
-                        
-                    case "dnt:":
-                        setDNT(data);
-                        break;
-                        
-                    case "connection:":
-                        setConnection(data);
-                        break;
-                }
+                setHeader(req[0], data);
             }
         }
-        /*
-        String message = "";
-        for(int i = line_nb; i < lines.length; i++)
-            message += (i == line_nb ? "" : "\n") + lines[i];
-        setMessage(message);*/
+        
         int rest = length - offset_char;
         byte[] dest = new byte[rest];
         System.arraycopy(datas, offset_char, dest, 0, rest);
@@ -124,88 +72,156 @@ public class HTTPPacket
     }
     // </editor-fold>
     
+    // <editor-fold desc="Headers manager" defaultstate="collapsed">
+    private Map headers = new HashMap();
+    public String getHeader(String name)
+    {
+        name = name.toLowerCase();
+        if(headers.containsKey(name))
+            return (String)headers.get(name);
+        else
+            return null;
+    }
+    public void setHeader(String name, String value)
+    {
+        headers.put(name.toLowerCase(), value);
+    }
+    // </editor-fold>
+    
     
     // <editor-fold desc="Members" defaultstate="collapsed">
     // <editor-fold desc="URI" defaultstate="collapsed">
-    private String uri = null;
     public String getURI()
     {
-        return uri;
+        return getHeader("URI");
     }
     public void setURI(String uri)
     {
-        this.uri = uri;
+        setHeader("URI", uri);
     }
     // </editor-fold>
     
     // <editor-fold desc="Method" defaultstate="collapsed">
-    private String method = null;
     public String getMethod()
     {
-        return method;
+        return getHeader("Method");
     }
     public void setMethod(String method)
     {
-        this.method = method;
+        setHeader("Method", method);
     }
     // </editor-fold>
     
     // <editor-fold desc="Version" defaultstate="collapsed">
-    private String version = null;
-    public String getVersion()
+    private Float version = null;
+    public Float getVersion()
     {
+        if(version == null)
+        {
+            String data = getHeader("Version");
+        }
+        
+        if(version == null)
+            version = 1.1f;
+        
+        return version;
+    }
+    private Float getVersionFromString(String data)
+    {
+        Float version = null;
+        
+        if(data != null)
+        {
+            String[] vals = data.trim().split("/");
+            if(vals.length >= 2)
+            {
+                try
+                {
+                    version = Float.parseFloat(vals[1]);
+                }
+                catch(NumberFormatException ex)
+                { }
+            }
+        }
+        
         return version;
     }
     public void setVersion(String version)
     {
+        setVersion(getVersionFromString(version));
+    }
+    public void setVersion(Float version)
+    {
         this.version = version;
+        setHeader("Version", "HTTP/" + version);
     }
     // </editor-fold>
     
     // <editor-fold desc="Content Type" defaultstate="collapsed">
-    private String contentType = null;
     public String getContentType()
     {
-        return contentType;
+        return getHeader("Content-Type");
     }
     public void setContentType(String contentType)
     {
-        this.contentType = contentType;
+        setHeader("Content-Type", contentType);
     }
     // </editor-fold>
     
     // <editor-fold desc="Accept" defaultstate="collapsed">
-    private String accept = null;
     public String getAccept()
     {
-        return accept;
+        return getHeader("Accept");
     }
     public void setAccept(String accept)
     {
-        this.accept = accept;
+        setHeader("Accept", accept);
     }
     // </editor-fold>
     
     // <editor-fold desc="Accept Language" defaultstate="collapsed">
-    private String acceptLanguage = null;
     public String getAcceptLanguage()
     {
-        return acceptLanguage;
+        return getHeader("Accept-Language");
     }
     public void setAcceptLanguage(String acceptLanguage)
     {
-        this.acceptLanguage = acceptLanguage;
+        setHeader("Accept-Language", acceptLanguage);
     }
     // </editor-fold>
     
+    // <editor-fold desc="Transfer Encoding" defaultstate="collapsed">
+    public boolean isChunked()
+    {
+        return "chunked".equals(getHeader("Transfer-Encoding"));
+    }
+    public void setChunked()
+    {
+        setHeader("Transfer-Encoding", "chunked");
+    }
+    // </editor-fold>
+    
+    // <editor-fold desc="Host" defaultstate="collapsed">
+    public String getHost()
+    {
+        return getHeader("Host");
+    }
+    public void setHost(String host)
+    {
+        setHeader("Host", host);
+    }
+    // </editor-fold>
+    
+    // <editor-fold desc="TODO... " defaultstate="collapsed">
+    /*
     // <editor-fold desc="User Agent" defaultstate="collapsed">
-    private String userAgent = null;
     public String getUserAgent()
     {
-        return userAgent;
+        return getHeader("Accept-Language");
     }
     public void setUserAgent(String userAgent)
     {
+        setHeader("Transfer-Encoding", "chunked");
         this.userAgent = userAgent;
     }
     // </editor-fold>
@@ -234,17 +250,6 @@ public class HTTPPacket
     }
     // </editor-fold>
     
-    // <editor-fold desc="Host" defaultstate="collapsed">
-    private String host = null;
-    public String getHost()
-    {
-        return host;
-    }
-    public void setHost(String host)
-    {
-        this.host = host;
-    }
-    // </editor-fold>
     
     // <editor-fold desc="If Modified Since" defaultstate="collapsed">
     private String ifModifiedSince = null;
@@ -321,6 +326,77 @@ public class HTTPPacket
         this.connection = connection;
     }
     // </editor-fold>
+    */
+    // </editor-fold>
+    // </editor-fold>
+    
+    
+    // <editor-fold desc="Status Message" defaultstate="collapsed">
+    private String statusMessage = null;
+    public String getStatusMessage()
+    {
+        if(statusMessage == null)
+        {
+            String data = getHeader("Status");
+            if(data != null)
+            {
+                String[] vals = data.trim().split(" ");
+                if(vals.length >= 2)
+                    statusMessage = vals[1];
+            }
+        }
+        
+        if(statusMessage == null)
+            statusMessage = "OK";
+            
+        return statusMessage;
+    }
+    public void setStatusMessage(String statusMessage)
+    {
+        this.statusMessage = statusMessage;
+        setHeader("Status", getStatus() + " " + getStatusMessage());
+    }
+    // </editor-fold>
+    
+    // <editor-fold desc="Status" defaultstate="collapsed">
+    private Integer status = null;
+    public Integer getStatus()
+    {
+        if(status == null)
+        {
+            String data = getHeader("Status");
+            if(data != null)
+            {
+                String[] vals = data.trim().split(" ");
+                if(vals.length >= 1)
+                {
+                    try
+                    {
+                        status = Integer.parseInt(vals[0]);
+                    }
+                    catch(NumberFormatException ex)
+                    { }
+                }
+            }
+        }
+        
+        if(status == null)
+            status = 200;
+        
+        return status;
+    }
+    public void setStatus(Integer status)
+    {
+        this.status = status;
+        setHeader("Status", getStatus() + " " + getStatusMessage());
+    }
+    public void setStatus(String status)
+    {
+        this.status = Integer.parseInt(status);
+        setHeader("Status", getStatus() + " " + getStatusMessage());
+    }
+    // </editor-fold>
+    // </editor-fold>
     
     // <editor-fold desc="Message" defaultstate="collapsed">
     private byte[] message = null;
@@ -356,35 +432,6 @@ public class HTTPPacket
     }
     // </editor-fold>
     
-    // <editor-fold desc="Status Message" defaultstate="collapsed">
-    private String statusMessage = "OK";
-    public String getStatusMessage()
-    {
-        return statusMessage;
-    }
-    public void setStatusMessage(String statusMessage)
-    {
-        this.statusMessage = statusMessage;
-    }
-    // </editor-fold>
-    
-    // <editor-fold desc="Status" defaultstate="collapsed">
-    private Integer status = 200;
-    public Integer getStatus()
-    {
-        return status;
-    }
-    public void setStatus(Integer status)
-    {
-        this.status = status;
-    }
-    public void setStatus(String status)
-    {
-        this.status = Integer.parseInt(status);
-    }
-    // </editor-fold>
-    // </editor-fold>
-    
     
     // <editor-fold desc="To String" defaultstate="collapsed">
     public String toRequestString()
@@ -402,42 +449,58 @@ public class HTTPPacket
     // <editor-fold desc="To Bytes" defaultstate="collapsed">
     public byte[] toRequestBytes()
     {
-        return Converters.ConcatBytes(new byte[][]
-        {
-            HTTPConverters.getFirstLine(new String[]
+        ArrayList<byte[]> arry = new ArrayList();
+        
+        arry.add(HTTPConverters.getFirstLine(new String[]
             {
                 getMethod(),
                 getURI(),
-                getVersion()
-            }),
-            HTTPConverters.getHeader("Host", getHost()),
-            HTTPConverters.getHeader("Connection", this.getConnection()),
-            HTTPConverters.getHeader("Accept", this.getAccept()),
-            HTTPConverters.getHeader("DNT", this.getDNT()),
-            HTTPConverters.getHeader("User-Agent", this.getUserAgent()),
-            HTTPConverters.getHeader("Accept-Encoding", this.getAcceptEncoding()),
-            HTTPConverters.getHeader("Accept-Language", this.getAcceptLanguage()),
-            HTTPConverters.getEmptyLine()
-        });
+                getHeader("Version")
+            }));
+        arry.addAll(getHeadersByte());
+        arry.add(HTTPConverters.getEmptyLine());
+        arry.add(getMessage());
+        
+        return Converters.ConcatBytes(arry.toArray(new byte[arry.size()][]));
     }
     public byte[] toResponseBytes()
     {
-        return Converters.ConcatBytes(new byte[][]
-        {
-            HTTPConverters.getFirstLine(new String[]
+        ArrayList<byte[]> arry = new ArrayList();
+        
+        arry.add(HTTPConverters.getFirstLine(new String[]
             {
-                getVersion(),
+                getHeader("Version"),
                 getStatus().toString(),
                 getStatusMessage()
-            }),
-            HTTPConverters.getHeader("Content-Type", this.getContentType()),
-            HTTPConverters.getEmptyLine(),
-            getMessage()
-        });
+            }));
+        arry.addAll(getHeadersByte());
+        
+        arry.add(HTTPConverters.getEmptyLine());
+        arry.add(getMessage());
+        
+        return Converters.ConcatBytes(arry.toArray(new byte[arry.size()][]));
     }
-    private static class HTTPConverters
+    protected ArrayList<byte[]> getHeadersByte()
     {
-        public static byte[] getFirstLine(String[] datas)
+        ArrayList<byte[]> list = new ArrayList();
+        
+        for(Object name : headers.keySet())
+            list.add(getHeaderByte((String)name));
+        
+        return list;
+    }
+    protected byte[] getHeaderByte(String name)
+    {
+        String value = getHeader(name);
+        if(value == null)
+            return null;
+        
+        String line = name + ": " + getHeader(name) + "\r\n";
+        return Converters.GetByteArrayFromString(line);
+    }
+    protected static class HTTPConverters
+    {
+        protected static byte[] getFirstLine(String[] datas)
         {
             String line = "";
 
@@ -446,22 +509,7 @@ public class HTTPPacket
 
             return Converters.GetByteArrayFromString(line + "\r\n");
         }
-        public static byte[] getHeader(String headerName, String data)
-        {
-            if(data == null)
-                return null;
-
-            String line = headerName + ": " + data + "\r\n";
-
-            return Converters.GetByteArrayFromString(line);
-        }
-        public static byte[] getHeader(String headerName, boolean data)
-        {
-            String line = headerName + ": " + (data ? "1" : "0") + "\r\n";
-
-            return Converters.GetByteArrayFromString(line);
-        }
-        public static byte[] getEmptyLine()
+        protected static byte[] getEmptyLine()
         {
             return Converters.GetByteArrayFromString("\r\n");
         }

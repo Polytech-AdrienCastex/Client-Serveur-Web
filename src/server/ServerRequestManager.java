@@ -6,6 +6,8 @@
 
 package server;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -42,8 +44,10 @@ class ServerRequestManager implements Runnable
     {
         try
         {
-            InputStream is = socket.getInputStream();
-            OutputStream os = socket.getOutputStream();
+            socket.setSoTimeout(2000);
+            
+            InputStream is = new BufferedInputStream(socket.getInputStream());
+            OutputStream os = new BufferedOutputStream(socket.getOutputStream());
             
             byte[] datas = new byte[2000];
             int nb = is.read(datas);
@@ -53,9 +57,9 @@ class ServerRequestManager implements Runnable
 
             HTTPPacket packRe = new HTTPPacket();
             
-            packRe.setVersion("HTTP/1.1");
+            packRe.setVersion("1.1");
             
-            // Searching the file
+            // Searching the file or default files
             File f = new File(server.getCurrentDirectory() + pack.getURI());
             if(f.isDirectory())
                 for(String defaultFile : defaultFiles)
