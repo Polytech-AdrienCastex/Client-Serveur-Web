@@ -35,22 +35,13 @@ public class Client
             s.setSoTimeout(2000);
             
             
-            HTTPPacket packRe = new HTTPPacket();
-            packRe.setVersion("HTTP/1.1");
-            packRe.setURI("/");
-            packRe.setMethod("GET");
-            packRe.setHost(dest);
-            //packRe.setConnection("keep-alive");
-            //packRe.setAccept("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-            //packRe.setUserAgent("Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.132 Safari/537.36 OPR/21.0.1432.67");
-            //packRe.setDNT(true);
-            //packRe.setAcceptEncoding("gzip,deflate,lzma,sdch");
-            packRe.setAcceptLanguage("en-US");
+            HTTPPacket packRe = new HTTPRequest(dest, "/", "GET", "HTTP/1.1");
+            packRe.setHeader(HTTPPacket.ACCEPT_LANGUAGE, "en-US");
             
-            System.out.println(packRe.toRequestString());
+            System.out.println(packRe);
             
             OutputStream os = new BufferedOutputStream(s.getOutputStream());
-            os.write(packRe.toRequestBytes());
+            os.write(packRe.toBytes());
             
             
             System.out.println(":::::::::::::");
@@ -61,7 +52,7 @@ public class Client
             byte[] datas = new byte[2000];
             int nb = is.read(datas);
             
-            HTTPPacket pack = new HTTPPacket(datas, nb);
+            HTTPPacket pack = new HTTPResponse(datas, nb);
             
             s.setSoTimeout(100);
             if(pack.isChunked())

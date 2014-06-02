@@ -24,7 +24,7 @@ public class ClientServeurWeb
      */
     public static void main(String[] args)
     {
-        Server s = new Server(1700, "F:\\Réseau\\HTTP\\Client-Serveur Web\\datas");
+        Server s = new Server(1700, "H:\\Réseau\\HTTP\\Client-Serveur Web\\datas");
         s.run();
         //new Client();
     }

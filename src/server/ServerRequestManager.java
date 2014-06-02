@@ -52,15 +52,12 @@ class ServerRequestManager implements Runnable
             byte[] datas = new byte[2000];
             int nb = is.read(datas);
 
-            HTTPPacket pack = new HTTPPacket(datas, nb);
+            HTTPPacket pack = new HTTPRequest(datas, nb);
 
 
-            HTTPPacket packRe = new HTTPPacket();
-            
-            packRe.setVersion("1.1");
             
             // Searching the file or default files
-            File f = new File(server.getCurrentDirectory() + pack.getURI());
+            File f = new File(server.getCurrentDirectory() + pack.getHeader(HTTPPacket.URI));
             if(f.isDirectory())
                 for(String defaultFile : defaultFiles)
                 {
@@ -69,19 +66,21 @@ class ServerRequestManager implements Runnable
                         break;
                 }
             
+            HTTPPacket packRe;
             if(!f.exists())
             { // File not found
                 System.err.println("File not found : " + f.getAbsolutePath());
                 
-                packRe.setStatus(404);
-                packRe.setStatusMessage("Requested file not found");
+                packRe = new HTTPResponse(404, "Requested file not found");
                 
             }
             else
             { // File found
                 System.out.println("File sent : " + f.getAbsolutePath());
                 
-                packRe.setContentType(Files.probeContentType(f.toPath()));
+                packRe = new HTTPResponse();
+                
+                packRe.setHeader(HTTPPacket.CONTENT_TYPE, Files.probeContentType(f.toPath()));
 
                 FileInputStream fos = new FileInputStream(f);
 
@@ -94,8 +93,9 @@ class ServerRequestManager implements Runnable
                 }
                 fos.close();
             }
+            packRe.setHeader(HTTPPacket.VERSION, "HTTP/1.1");
             
-            os.write(packRe.toResponseBytes());
+            os.write(packRe.toBytes());
 
             is.close();
             os.close();
@@ -104,6 +104,7 @@ class ServerRequestManager implements Runnable
         catch(Exception ex)
         {
             System.err.println("Error : " + ex.getMessage());
+            //ex.printStackTrace();
         }
     }
     
